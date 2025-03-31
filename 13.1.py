@@ -1,0 +1,352 @@
+import sys
+import time
+import numpy as np
+import cv2
+import bosdyn.client
+import bosdyn.client.util
+from bosdyn.api.basic_command_pb2 import RobotCommandFeedbackStatus
+from bosdyn.client import math_helpers
+from bosdyn.client.frame_helpers import BODY_FRAME_NAME, ODOM_FRAME_NAME, get_se2_a_tform_b
+from bosdyn.client.lease import LeaseClient, LeaseKeepAlive
+from bosdyn.client.robot_command import (RobotCommandBuilder, RobotCommandClient, blocking_stand)
+from bosdyn.client.robot_state import RobotStateClient
+from bosdyn.client.image import ImageClient
+from bosdyn.api import image_pb2
+from ultralytics import YOLO  # YOLOv8
+import signal
+import select
+import termios
+import tty
+import math
+
+# Spot Connection Details
+SPOT_IP = "192.168.80.3"
+USERNAME = "user"
+PASSWORD = "SPOT=LAB_in_K14"
+
+# Initialize SDK and Authenticate
+sdk = bosdyn.client.create_standard_sdk('SpotHumanFollow')
+robot = sdk.create_robot(SPOT_IP)
+robot.authenticate(USERNAME, PASSWORD)
+print("🔐 Authentication Successful!")
+
+# Check if Spot is Estopped
+if robot.is_estopped():
+    print("❌ Spot is Estopped! Release E-Stop and try again.")
+    exit(1)
+
+# Setup Clients
+lease_client = robot.ensure_client(LeaseClient.default_service_name)
+robot_state_client = robot.ensure_client(RobotStateClient.default_service_name)
+robot_command_client = robot.ensure_client(RobotCommandClient.default_service_name)
+image_client = robot.ensure_client(ImageClient.default_service_name)
+
+# Acquire Lease & Power On
+try:
+    lease_keep_alive = LeaseKeepAlive(lease_client, must_acquire=True, return_at_exit=True)
+except bosdyn.client.lease.ResourceAlreadyClaimedError:
+    print("⚠️ Spot's lease is already held. Taking over...")
+    lease_client.take()
+    lease_keep_alive = LeaseKeepAlive(lease_client, must_acquire=True, return_at_exit=True)
+robot.time_sync.wait_for_sync()
+
+if not robot.is_powered_on():
+    print("🔌 Powering on Spot...")
+    robot.power_on()
+    print("✅ Spot is powered on!")
+else:
+    print("✅ Spot is already powered on.")
+
+blocking_stand(robot_command_client)
+print("📢 Spot is now standing!")
+
+# Load YOLO Model
+model = YOLO('yolov8s.pt')
+print("🎯 YOLOv8s Model Loaded!")
+
+def get_spot_image():
+    """Captures an RGB image and depth data from Spot's camera."""
+    image_requests = [
+        image_pb2.ImageRequest(image_source_name="frontleft_depth_in_visual_frame", pixel_format=image_pb2.Image.PIXEL_FORMAT_DEPTH_U16),
+        image_pb2.ImageRequest(image_source_name="frontleft_fisheye_image", quality_percent=50)
+    ]
+    
+    response = image_client.get_image(image_requests)
+    if not response or len(response) < 2:
+        print("❌ Failed to capture Spot's camera image.")
+        return None, None
+    
+    rgb_img = response[1].shot.image
+    depth_img = response[0].shot.image
+    
+    rgb_frame = cv2.imdecode(np.frombuffer(rgb_img.data, dtype=np.uint8), cv2.IMREAD_COLOR)
+    depth_frame = np.frombuffer(depth_img.data, dtype=np.uint16).reshape(rgb_frame.shape[:2])
+
+    if rgb_frame is None or depth_frame is None:
+        print("🚨 Image capture failed. Retrying...")
+        return None, None
+    
+    print("📷 Image captured successfully!")
+    return rgb_frame, depth_frame
+
+def estimate_distance(bbox, depth_frame):
+    """Estimate distance using depth data from Spot's camera."""
+    x1, y1, x2, y2 = bbox
+    center_x, center_y = int((x1 + x2) / 2), int((y1 + y2) / 2)
+    
+    depth_values = depth_frame[max(0, center_y - 5): min(depth_frame.shape[0], center_y + 5),
+                               max(0, center_x - 5): min(depth_frame.shape[1], center_x + 5)]
+    
+    valid_depths = depth_values[depth_values > 0]
+    if valid_depths.size > 0:
+        distance = np.median(valid_depths) / 1000.0
+        return distance
+    else:
+        print("⚠️ No valid depth data. Using estimated bounding box method.")
+        return (depth_frame.shape[1] / (x2 - x1)) * 1.5
+
+def move_spot_forward(distance=0.2):
+    """Moves Spot forward using a trajectory-based command and ensures execution."""
+    print(f"🔄 Sending move command: {distance:.2f} meters forward...")
+    transforms = robot_state_client.get_robot_state().kinematic_state.transforms_snapshot
+    body_tform_goal = math_helpers.SE2Pose(x=distance, y=0, angle=0)
+    out_tform_body = get_se2_a_tform_b(transforms, ODOM_FRAME_NAME, BODY_FRAME_NAME)
+    out_tform_goal = out_tform_body * body_tform_goal
+
+    robot_cmd = RobotCommandBuilder.synchro_se2_trajectory_point_command(
+        goal_x=out_tform_goal.x, goal_y=out_tform_goal.y, goal_heading=out_tform_goal.angle,
+        frame_name=ODOM_FRAME_NAME, params=RobotCommandBuilder.mobility_params(stair_hint=False))
+
+    print("🚶 Sending movement command to Spot...")
+    robot_command_client.robot_command(RobotCommandBuilder.stop_command())
+    time.sleep(0.1)  # Stop previous motion
+    cmd_id = robot_command_client.robot_command(robot_cmd, end_time_secs=time.time() + 1)
+
+    # Monitor feedback to ensure the command is executed
+    for _ in range(2):
+        feedback = robot_command_client.robot_command_feedback(cmd_id)
+        mobility_feedback = feedback.feedback.synchronized_feedback.mobility_command_feedback
+
+        if mobility_feedback.status == RobotCommandFeedbackStatus.STATUS_PROCESSING:
+            print("✅ Movement command is being processed.")
+        elif mobility_feedback.se2_trajectory_feedback.status == mobility_feedback.se2_trajectory_feedback.STATUS_AT_GOAL:
+            print("✅ Spot has arrived at the goal.")
+            break
+        else:
+            print("⚠️ Spot failed to move.")
+            break
+
+        time.sleep(0.5)
+
+def move_spot_backward(distance=0.2):
+    """Moves Spot backward using a trajectory-based command and ensures execution."""
+    print(f"🔄 Sending move command: {distance:.2f} meters backward...")
+    transforms = robot_state_client.get_robot_state().kinematic_state.transforms_snapshot
+    body_tform_goal = math_helpers.SE2Pose(x=-distance, y=0, angle=0)
+    out_tform_body = get_se2_a_tform_b(transforms, ODOM_FRAME_NAME, BODY_FRAME_NAME)
+    out_tform_goal = out_tform_body * body_tform_goal
+
+    robot_cmd = RobotCommandBuilder.synchro_se2_trajectory_point_command(
+        goal_x=out_tform_goal.x, goal_y=out_tform_goal.y, goal_heading=out_tform_goal.angle,
+        frame_name=ODOM_FRAME_NAME, params=RobotCommandBuilder.mobility_params(stair_hint=False))
+
+    print("🚶 Sending movement command to Spot...")
+    robot_command_client.robot_command(RobotCommandBuilder.stop_command())
+    time.sleep(0.1)
+    cmd_id = robot_command_client.robot_command(robot_cmd, end_time_secs=time.time() + 1)
+
+    for _ in range(2):
+        feedback = robot_command_client.robot_command_feedback(cmd_id)
+        mobility_feedback = feedback.feedback.synchronized_feedback.mobility_command_feedback
+
+        if mobility_feedback.status == RobotCommandFeedbackStatus.STATUS_PROCESSING:
+            print("✅ Movement command is being processed.")
+        elif mobility_feedback.se2_trajectory_feedback.status == mobility_feedback.se2_trajectory_feedback.STATUS_AT_GOAL:
+            print("✅ Spot has arrived at the goal.")
+            break
+        else:
+            print("⚠️ Spot failed to move.")
+            break
+
+        time.sleep(0.5)
+
+def rotate_spot(angle):
+    """
+    Rotates Spot in place by the specified angle (in radians).
+    Positive angles turn left; negative angles turn right.
+    """
+    print(f"🔄 Rotating Spot by {angle:.2f} radians...")
+    transforms = robot_state_client.get_robot_state().kinematic_state.transforms_snapshot
+    current_pose = get_se2_a_tform_b(transforms, ODOM_FRAME_NAME, BODY_FRAME_NAME)
+    new_heading = current_pose.angle + angle
+
+    robot_cmd = RobotCommandBuilder.synchro_se2_trajectory_point_command(
+        goal_x=current_pose.x,
+        goal_y=current_pose.y,
+        goal_heading=new_heading,
+        frame_name=ODOM_FRAME_NAME,
+        params=RobotCommandBuilder.mobility_params(stair_hint=False)
+    )
+
+    robot_command_client.robot_command(RobotCommandBuilder.stop_command())
+    time.sleep(0.1)
+    cmd_id = robot_command_client.robot_command(robot_cmd, end_time_secs=time.time() + 1)
+
+    for _ in range(2):
+        feedback = robot_command_client.robot_command_feedback(cmd_id)
+        mobility_feedback = feedback.feedback.synchronized_feedback.mobility_command_feedback
+        if mobility_feedback.status == RobotCommandFeedbackStatus.STATUS_PROCESSING:
+            print("✅ Rotation command is being processed.")
+        elif mobility_feedback.se2_trajectory_feedback.status == mobility_feedback.se2_trajectory_feedback.STATUS_AT_GOAL:
+            print("✅ Spot has completed rotation.")
+            break
+        else:
+            print("⚠️ Spot failed to rotate.")
+            break
+        time.sleep(0.5)
+
+def quat_from_euler(roll, pitch, yaw):
+    """Convert Euler angles to a quaternion."""
+    cy = math.cos(yaw * 0.5)
+    sy = math.sin(yaw * 0.5)
+    cp = math.cos(pitch * 0.5)
+    sp = math.sin(pitch * 0.5)
+    cr = math.cos(roll * 0.5)
+    sr = math.sin(roll * 0.5)
+
+    w = cr * cp * cy + sr * sp * sy
+    x = sr * cp * cy - cr * sp * sy
+    y = cr * sp * cy + sr * cp * sy
+    z = cr * cp * sy - sr * sp * cy
+
+    return math_helpers.Quat(w=w, x=x, y=y, z=z)
+
+from bosdyn.api import geometry_pb2
+from bosdyn.client import math_helpers
+
+if not hasattr(math_helpers.Quat, 'to_quaternion'):
+    def to_quaternion(self):
+        return geometry_pb2.Quaternion(w=self.w, x=self.x, y=self.y, z=self.z)
+    math_helpers.Quat.to_quaternion = to_quaternion
+
+def adjust_spot_posture(height=0.1, pitch=0.2):
+    """Adjust Spot's body posture (height and pitch)."""
+    print(f"🔄 Adjusting Spot's posture: height={height:.2f}m, pitch={pitch:.2f}rad...")
+    footprint_R_body = quat_from_euler(roll=0.0, pitch=pitch, yaw=0.0)
+    
+    robot_cmd = RobotCommandBuilder.synchro_stand_command(
+        body_height=height,
+        footprint_R_body=footprint_R_body
+    )
+    robot_command_client.robot_command(robot_cmd)
+
+def cleanup_and_exit():
+    """Stops Spot, releases the lease, and exits cleanly."""
+    print("🛑 Cleaning up... Spot sitting down and releasing lease.")
+    try:
+        robot_command_client.robot_command(RobotCommandBuilder.synchro_sit_command())
+        time.sleep(2)
+    except Exception as e:
+        print(f"⚠️ Error while stopping Spot: {e}")
+
+    lease_keep_alive.shutdown()
+    sys.exit(0)
+
+def is_key_pressed(key):
+    """Check if a key is pressed without blocking execution."""
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        return select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], [])
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+print("🔄 Starting main loop...")
+while True:
+    if is_key_pressed('q'):
+        print("🛑 'q' pressed. Spot sitting down and stopping...")
+        cleanup_and_exit()
+        break
+
+    print("📸 Capturing image from Spot...")
+    rgb_frame, depth_frame = get_spot_image()
+    if rgb_frame is None or depth_frame is None:
+        print("❌ No image received from Spot's camera. Retrying...")
+        time.sleep(1)
+        continue
+    
+    print("🧠 Running YOLO detection...")
+    results = model.predict(rgb_frame, imgsz=640, conf=0.3)
+    if not results or len(results[0].boxes) == 0:
+        print("⚠️ No detections found.")
+        time.sleep(1)
+        continue
+    print(f"✅ Detected {len(results[0].boxes)} objects.")
+    detections = results[0].boxes.data.cpu().numpy()
+
+    # Define a calibration bias in pixels (adjust this value based on your testing)
+    horizontal_center_bias = 20  # Positive value shifts the computed center to the right
+
+    # Calculate the adjusted center of the image
+    image_center = rgb_frame.shape[1] / 2 + horizontal_center_bias
+    print(f"Image Center: {image_center:.2f} pixels")
+
+    # Track the person closest to the center horizontally
+    tracked_detection = None
+    min_abs_offset = float('inf')
+
+    for det in detections:
+        if len(det) >= 6:
+            x1, y1, x2, y2, conf, class_id = det[:6]
+            if int(class_id) == 0:  # Person
+                bbox_center_x = (x1 + x2) / 2
+                offset = bbox_center_x - image_center
+                abs_offset = abs(offset)
+                print(f"Bounding Box Center: {bbox_center_x:.2f} pixels, Offset: {offset:.2f} pixels")
+                if abs_offset < min_abs_offset:
+                    min_abs_offset = abs_offset
+                    tracked_detection = det
+                    tracked_offset = offset  # Store the actual offset (not absolute)
+
+    if tracked_detection is not None:
+        x1, y1, x2, y2, conf, class_id = tracked_detection[:6]
+        distance = estimate_distance([x1, y1, x2, y2], depth_frame)
+        print(f"Tracked person at {distance:.2f} meters, horizontal offset: {tracked_offset:.2f} pixels.")
+
+        # Only adjust if the offset exceeds a threshold.
+        rotation_threshold_pixels = 10  # Reduced deadband in pixels.
+        if abs(tracked_offset) > rotation_threshold_pixels:
+            # Set a maximum rotation angle (e.g., 15 degrees in radians).
+            max_rotation_angle = 0.2618  # 15 degrees in radians.
+    
+            # Compute a proportional rotation, scaling the offset relative to half the image width.
+            # This gives a value between -max_rotation_angle and +max_rotation_angle.
+            rotation_angle = -max_rotation_angle * (tracked_offset / (rgb_frame.shape[1] / 2))
+    
+            # Log the offset and rotation angle for debugging
+            print(f"Offset: {tracked_offset:.2f} pixels, Rotation Angle: {rotation_angle:.4f} radians")
+    
+            # Rotate Spot
+            rotate_spot(rotation_angle)
+
+
+        # Distance adjustment
+        target_distance = 0.5  # Target distance in meters.
+        distance_threshold = 0.1
+
+        if distance > target_distance + distance_threshold:
+            move_distance = min(0.5, distance - target_distance)
+            print(f"📏 Person is too far ({distance:.2f}m). Moving forward {move_distance:.2f} meters...")
+            move_spot_forward(move_distance)
+            adjust_spot_posture(height=0.0, pitch=0.0)
+        elif distance < target_distance - distance_threshold:
+            move_distance = min(0.5, target_distance - distance)
+            print(f"📏 Person is too close ({distance:.2f}m). Moving backward {move_distance:.2f} meters...")
+            move_spot_backward(move_distance)
+            adjust_spot_posture(height=0.1, pitch=0.2)
+        else:
+            print(f"✅ Keeping distance ({distance:.2f}m). No movement needed.")
+            adjust_spot_posture(height=0.0, pitch=0.0)
+
+    time.sleep(1)

@@ -1,0 +1,144 @@
+0: 480x640 1 person, 1 traffic light, 117.4ms
+Speed: 2.1ms preprocess, 117.4ms inference, 0.6ms postprocess per image at shape (1, 3, 480, 640)
+✅ Detected 2 objects.
+Tracked person at 2.11 meters, horizontal offset: 218.65 pixels.
+🔄 Rotating Spot by 0.44 radians...
+✅ Rotation command is being processed.
+✅ Rotation command is being processed.
+📏 Person is too far (2.11m). Moving forward 0.50 meters...
+🔄 Sending move command: 0.50 meters forward...
+🚶 Sending movement command to Spot...
+✅ Movement command is being processed.
+✅ Movement command is being processed.
+🔄 Adjusting Spot's posture: height=0.00m, pitch=0.00rad...
+📸 Capturing image from Spot...
+📷 Image captured successfully!
+🧠 Running YOLO detection...
+
+0: 480x640 1 person, 117.7ms
+Speed: 1.7ms preprocess, 117.7ms inference, 0.6ms postprocess per image at shape (1, 3, 480, 640)
+✅ Detected 1 objects.
+Tracked person at 1.67 meters, horizontal offset: 201.87 pixels.
+🔄 Rotating Spot by 0.40 radians...
+✅ Rotation command is being processed.
+✅ Rotation command is being processed.
+📏 Person is too far (1.67m). Moving forward 0.50 meters...
+🔄 Sending move command: 0.50 meters forward...
+🚶 Sending movement command to Spot...
+✅ Movement command is being processed.
+✅ Movement command is being processed.
+🔄 Adjusting Spot's posture: height=0.00m, pitch=0.00rad...
+📸 Capturing image from Spot...
+📷 Image captured successfully!
+🧠 Running YOLO detection...
+
+0: 480x640 1 person, 117.2ms
+Speed: 2.1ms preprocess, 117.2ms inference, 1.8ms postprocess per image at shape (1, 3, 480, 640)
+✅ Detected 1 objects.
+⚠️ No valid depth data. Using estimated bounding box method.
+Tracked person at 4.70 meters, horizontal offset: 95.89 pixels.
+🔄 Rotating Spot by 0.19 radians...
+✅ Rotation command is being processed.
+✅ Rotation command is being processed.
+📏 Person is too far (4.70m). Moving forward 0.50 meters...
+🔄 Sending move command: 0.50 meters forward...
+🚶 Sending movement command to Spot...
+✅ Movement command is being processed.
+✅ Movement command is being processed.
+🔄 Adjusting Spot's posture: height=0.00m, pitch=0.00rad...
+📸 Capturing image from Spot...
+📷 Image captured successfully!
+🧠 Running YOLO detection...\\\
+
+
+
+error of 14.py
+0: 480x640 1 suitcase, 124.4ms
+Speed: 1.2ms preprocess, 124.4ms inference, 0.7ms postprocess per image at shape (1, 3, 480, 640)
+📸 Capturing image from Spot...
+📷 Images captured successfully!
+⚠️ Image stitching failed. Using left image as fallback.
+🧠 Running YOLO detection...
+
+0: 480x640 1 person, 3 suitcases, 112.7ms
+Speed: 1.2ms preprocess, 112.7ms inference, 0.7ms postprocess per image at shape (1, 3, 480, 640)
+Traceback (most recent call last):
+  File "/Users/kossakovm/Desktop/thesis/spotproject/yolov5/test14.py", line 273, in <module>
+    tracks = tracker.update_tracks(detections_for_tracker, frame=stitched_img)
+  File "/Users/kossakovm/Desktop/thesis/spotproject/yolov5_env/lib/python3.10/site-packages/deep_sort_realtime/deepsort_tracker.py", line 195, in update_tracks
+    assert len(raw_detections[0][0])==4
+TypeError: object of type 'numpy.float32' has no len()
+
+
+
+calibration
+
+Image: calib_left_20250321_170614.png | Nominal center: 320.00 | Clicked: 157 | Offset: -163.00 pixels
+
+Annotate the center of the person in calib_left_20250321_170624.png and press any key when done.
+Clicked x-coordinate on calib_left_20250321_170624.png: 78
+Image: calib_left_20250321_170624.png | Nominal center: 320.00 | Clicked: 78 | Offset: -242.00 pixels
+
+Annotate the center of the person in calib_left_20250321_170632.png and press any key when done.
+Clicked x-coordinate on calib_left_20250321_170632.png: 42
+Image: calib_left_20250321_170632.png | Nominal center: 320.00 | Clicked: 42 | Offset: -278.00 pixels
+
+Annotate the center of the person in calib_left_20250321_170639.png and press any key when done.
+Clicked x-coordinate on calib_left_20250321_170639.png: 19
+Image: calib_left_20250321_170639.png | Nominal center: 320.00 | Clicked: 19 | Offset: -301.00 pixels
+
+Annotate the center of the person in calib_left_20250321_170642.png and press any key when done.
+Clicked x-coordinate on calib_left_20250321_170642.png: 23
+Image: calib_left_20250321_170642.png | Nominal center: 320.00 | Clicked: 23 | Offset: -297.00 pixels
+
+Annotate the center of the person in calib_left_20250321_170650.png and press any key when done.
+Clicked x-coordinate on calib_left_20250321_170650.png: 31
+Image: calib_left_20250321_170650.png | Nominal center: 320.00 | Clicked: 31 | Offset: -289.00 pixels
+
+Annotate the center of the person in calib_left_20250321_170654.png and press any key when done.
+No click recorded for calib_left_20250321_170654.png. Skipping this image.
+
+Annotate the center of the person in calib_left_20250321_170657.png and press any key when done.
+No click recorded for calib_left_20250321_170657.png. Skipping this image.
+
+Annotate the center of the person in calib_left_20250321_170702.png and press any key when done.
+No click recorded for calib_left_20250321_170702.png. Skipping this image.
+
+Annotating RIGHT fisheye images...
+Annotate the center of the person in calib_right_20250321_170614.png and press any key when done.
+No click recorded for calib_right_20250321_170614.png. Skipping this image.
+
+Annotate the center of the person in calib_right_20250321_170624.png and press any key when done.
+No click recorded for calib_right_20250321_170624.png. Skipping this image.
+
+Annotate the center of the person in calib_right_20250321_170632.png and press any key when done.
+Clicked x-coordinate on calib_right_20250321_170632.png: 37
+Image: calib_right_20250321_170632.png | Nominal center: 320.00 | Clicked: 37 | Offset: -283.00 pixels
+
+Annotate the center of the person in calib_right_20250321_170639.png and press any key when done.
+Clicked x-coordinate on calib_right_20250321_170639.png: 20
+Image: calib_right_20250321_170639.png | Nominal center: 320.00 | Clicked: 20 | Offset: -300.00 pixels
+
+Annotate the center of the person in calib_right_20250321_170642.png and press any key when done.
+Clicked x-coordinate on calib_right_20250321_170642.png: 22
+Image: calib_right_20250321_170642.png | Nominal center: 320.00 | Clicked: 22 | Offset: -298.00 pixels
+
+Annotate the center of the person in calib_right_20250321_170650.png and press any key when done.
+Clicked x-coordinate on calib_right_20250321_170650.png: 31
+Image: calib_right_20250321_170650.png | Nominal center: 320.00 | Clicked: 31 | Offset: -289.00 pixels
+
+Annotate the center of the person in calib_right_20250321_170654.png and press any key when done.
+Clicked x-coordinate on calib_right_20250321_170654.png: 69
+Image: calib_right_20250321_170654.png | Nominal center: 320.00 | Clicked: 69 | Offset: -251.00 pixels
+
+Annotate the center of the person in calib_right_20250321_170657.png and press any key when done.
+Clicked x-coordinate on calib_right_20250321_170657.png: 114
+Image: calib_right_20250321_170657.png | Nominal center: 320.00 | Clicked: 114 | Offset: -206.00 pixels
+
+Annotate the center of the person in calib_right_20250321_170702.png and press any key when done.
+Clicked x-coordinate on calib_right_20250321_170702.png: 135
+Image: calib_right_20250321_170702.png | Nominal center: 320.00 | Clicked: 135 | Offset: -185.00 pixels
+
+
+Average horizontal offset for LEFT fisheye images: -261.67 pixels
+Average horizontal offset for RIGHT fisheye images: -258.86 pixels

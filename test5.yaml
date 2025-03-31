@@ -1,0 +1,283 @@
+(yolov5_env) (base) kossakovm@Marlens-MacBook-Pro spotproject % python yolov5/test5.py forward
+✅ Time sync completed!
+📢 Making Spot stand up...
+🔍 Full feedback response: header {
+  request_header {
+    request_timestamp {
+      seconds: 1739461113
+      nanos: 495920128
+    }
+    client_name: "SpotMovementMarlens-MacBook-Pro.local:__main__.py-15166"
+  }
+  request_received_timestamp {
+    seconds: 1739461217
+    nanos: 700849883
+  }
+  response_timestamp {
+    seconds: 1739461217
+    nanos: 700875316
+  }
+  error {
+    code: CODE_OK
+  }
+  request {
+    type_url: "type.googleapis.com/bosdyn.api.RobotCommandFeedbackRequest"
+    value: "\nG\n\014\010\371\243\270\275\006\020\200\310\274\354\001\0227SpotMovementMarlens-MacBook-Pro.local:__main__.py-15166\020\037"
+  }
+}
+feedback {
+  synchronized_feedback {
+    mobility_command_feedback {
+      stand_feedback {
+        status: STATUS_IS_STANDING
+        standing_state: STANDING_FROZEN
+      }
+      status: STATUS_PROCESSING
+    }
+  }
+}
+lease_use_result {
+  status: STATUS_OK
+  owner {
+    client_name: "SpotMovementMarlens-MacBook-Pro.local:__main__.py-15166"
+  }
+  attempted_lease {
+    resource: "body"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    sequence: 1
+    client_names: "root"
+    client_names: "SpotMovement"
+  }
+  previous_lease {
+    resource: "body"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    sequence: 1
+    client_names: "root"
+    client_names: "SpotMovement"
+  }
+  latest_known_lease {
+    resource: "body"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    sequence: 1
+    client_names: "root"
+    client_names: "SpotMovement"
+  }
+  latest_resources {
+    resource: "arm"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    client_names: "root"
+  }
+  latest_resources {
+    resource: "fan"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    client_names: "root"
+  }
+  latest_resources {
+    resource: "gripper"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    client_names: "root"
+  }
+  latest_resources {
+    resource: "mobility"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    sequence: 1
+    client_names: "root"
+    client_names: "SpotMovement"
+  }
+}
+
+🔍 Full feedback response: header {
+  request_header {
+    request_timestamp {
+      seconds: 1739461114
+      nanos: 525478912
+    }
+    client_name: "SpotMovementMarlens-MacBook-Pro.local:__main__.py-15166"
+  }
+  request_received_timestamp {
+    seconds: 1739461218
+    nanos: 734975378
+  }
+  response_timestamp {
+    seconds: 1739461218
+    nanos: 735004764
+  }
+  error {
+    code: CODE_OK
+  }
+  request {
+    type_url: "type.googleapis.com/bosdyn.api.RobotCommandFeedbackRequest"
+    value: "\nG\n\014\010\372\243\270\275\006\020\200\330\310\372\001\0227SpotMovementMarlens-MacBook-Pro.local:__main__.py-15166\020\037"
+  }
+}
+feedback {
+  synchronized_feedback {
+    mobility_command_feedback {
+      stand_feedback {
+        status: STATUS_IS_STANDING
+        standing_state: STANDING_FROZEN
+      }
+      status: STATUS_PROCESSING
+    }
+  }
+}
+lease_use_result {
+  status: STATUS_OK
+  owner {
+    client_name: "SpotMovementMarlens-MacBook-Pro.local:__main__.py-15166"
+  }
+  attempted_lease {
+    resource: "body"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    sequence: 1
+    client_names: "root"
+    client_names: "SpotMovement"
+  }
+  previous_lease {
+    resource: "body"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    sequence: 1
+    client_names: "root"
+    client_names: "SpotMovement"
+  }
+  latest_known_lease {
+    resource: "body"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    sequence: 1
+    client_names: "root"
+    client_names: "SpotMovement"
+  }
+  latest_resources {
+    resource: "arm"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    client_names: "root"
+  }
+  latest_resources {
+    resource: "fan"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    client_names: "root"
+  }
+  latest_resources {
+    resource: "gripper"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    client_names: "root"
+  }
+  latest_resources {
+    resource: "mobility"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    sequence: 1
+    client_names: "root"
+    client_names: "SpotMovement"
+  }
+}
+
+🔍 Full feedback response: header {
+  request_header {
+    request_timestamp {
+      seconds: 1739461115
+      nanos: 547842048
+    }
+    client_name: "SpotMovementMarlens-MacBook-Pro.local:__main__.py-15166"
+  }
+  request_received_timestamp {
+    seconds: 1739461219
+    nanos: 749051759
+  }
+  response_timestamp {
+    seconds: 1739461219
+    nanos: 749080784
+  }
+  error {
+    code: CODE_OK
+  }
+  request {
+    type_url: "type.googleapis.com/bosdyn.api.RobotCommandFeedbackRequest"
+    value: "\nG\n\014\010\373\243\270\275\006\020\200\320\235\205\002\0227SpotMovementMarlens-MacBook-Pro.local:__main__.py-15166\020\037"
+  }
+}
+feedback {
+  synchronized_feedback {
+    mobility_command_feedback {
+      stand_feedback {
+        status: STATUS_IS_STANDING
+        standing_state: STANDING_FROZEN
+      }
+      status: STATUS_PROCESSING
+    }
+  }
+}
+lease_use_result {
+  status: STATUS_OK
+  owner {
+    client_name: "SpotMovementMarlens-MacBook-Pro.local:__main__.py-15166"
+  }
+  attempted_lease {
+    resource: "body"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    sequence: 1
+    client_names: "root"
+    client_names: "SpotMovement"
+  }
+  previous_lease {
+    resource: "body"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    sequence: 1
+    client_names: "root"
+    client_names: "SpotMovement"
+  }
+  latest_known_lease {
+    resource: "body"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    sequence: 1
+    client_names: "root"
+    client_names: "SpotMovement"
+  }
+  latest_resources {
+    resource: "arm"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    client_names: "root"
+  }
+  latest_resources {
+    resource: "fan"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    client_names: "root"
+  }
+  latest_resources {
+    resource: "gripper"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    client_names: "root"
+  }
+  latest_resources {
+    resource: "mobility"
+    epoch: "cOKiAMwBUYjbaFgC"
+    sequence: 57
+    sequence: 1
+    client_names: "root"
+    client_names: "SpotMovement"
+  }
+}
+
+^CTraceback (most recent call last):
+  File "/Users/kossakovm/Desktop/thesis/spotproject/yolov5/test5.py", line 55, in <module>
+    time.sleep(1)
+KeyboardInterrupt
